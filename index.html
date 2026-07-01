@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>風向自測：你的立場，不是別人的立場</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12161d;--card:#1b212b;--card2:#212836;--line:#2b3341;
+    --ink:#ece5d3;--muted:#8b93a3;--gold:#c9a227;--red:#b3503d;--teal:#4f8a8a;--purple:#7a5fa0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(1200px 600px at 50% -10%,#1a2130 0%,transparent 60%),var(--bg);
+    color:var(--ink);font-family:'Noto Sans TC',sans-serif;
+    min-height:100vh;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:28px 20px 80px;}
+
+  .compass-holder{display:flex;flex-direction:column;align-items:center;margin-bottom:8px;}
+  .compass{width:120px;height:120px;position:relative;}
+  .compass svg{width:100%;height:100%;display:block;}
+  .needle{transform-origin:60px 60px;transition:transform .7s cubic-bezier(.2,.8,.25,1);}
+  .compass-label{font-family:'Noto Serif TC',serif;font-weight:700;font-size:12px;letter-spacing:.14em;color:var(--muted);margin-top:10px;}
+
+  header{text-align:center;margin-bottom:28px;}
+  h1{font-family:'Noto Serif TC',serif;font-weight:900;font-size:28px;line-height:1.35;margin:6px 0 10px;}
+  h1 span{color:var(--gold);}
+  .sub{color:var(--muted);font-size:14px;line-height:1.75;max-width:480px;margin:0 auto;}
+
+  .progress-track{height:3px;background:var(--line);border-radius:2px;margin:22px 0 30px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--red));width:0%;transition:width .4s ease;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px 22px;margin-bottom:18px;box-shadow:0 12px 30px -18px rgba(0,0,0,.6);}
+  .qtag{font-family:'Noto Serif TC',serif;font-weight:700;font-size:12px;color:var(--gold);letter-spacing:.12em;margin-bottom:8px;}
+  .qtext{font-size:17px;line-height:1.65;font-weight:500;margin-bottom:18px;}
+  .qhint{color:var(--muted);font-size:12.5px;margin:-12px 0 16px;}
+
+  .opt{display:flex;align-items:flex-start;gap:12px;padding:13px 14px;margin-bottom:10px;background:var(--card2);border:1px solid var(--line);border-radius:11px;cursor:pointer;transition:border-color .2s,background .2s;}
+  .opt:hover{border-color:#3a4456;}
+  .opt.selected{border-color:var(--gold);background:#2a2618;}
+  .opt.checkbox .mark{border-radius:5px;}
+  .opt.checkbox.selected .mark::after{border-radius:2px;}
+  .mark{flex:0 0 18px;height:18px;border-radius:50%;border:1.5px solid var(--muted);margin-top:2px;position:relative;}
+  .opt.selected .mark{border-color:var(--gold);}
+  .opt.selected .mark::after{content:'';position:absolute;inset:3px;background:var(--gold);border-radius:50%;}
+  .otext{font-size:14.5px;line-height:1.6;color:var(--ink);}
+
+  .navrow{display:flex;justify-content:space-between;align-items:center;margin-top:20px;}
+  button{font-family:'Noto Sans TC',sans-serif;font-weight:700;font-size:14.5px;border:none;border-radius:10px;padding:12px 22px;cursor:pointer;transition:transform .12s,opacity .2s;}
+  button:active{transform:scale(.97);}
+  .btn-primary{background:var(--gold);color:#20180a;}
+  .btn-ghost{background:transparent;color:var(--muted);}
+
+  /* results */
+  .result-hidden{display:none;}
+  .persona-badge{text-align:center;padding:6px 14px;border:1px solid var(--gold);display:inline-block;border-radius:999px;color:var(--gold);font-size:12px;letter-spacing:.1em;margin-bottom:14px;}
+  .persona-title{font-family:'Noto Serif TC',serif;font-weight:900;font-size:24px;text-align:center;margin:0 0 14px;}
+  .persona-desc{font-size:14.5px;line-height:1.9;color:#d8d2c2;}
+
+  .ay-box{margin:20px 0 0;padding:14px 16px;background:var(--card2);border-radius:10px;border-left:3px solid var(--purple);}
+  .ay-label{font-size:11.5px;color:var(--purple);font-weight:700;letter-spacing:.08em;margin-bottom:5px;}
+  .ay-text{font-size:13.5px;color:#cfc9ba;line-height:1.7;}
+
+  .axes{margin:26px 0;}
+  .axis{margin-bottom:18px;}
+  .axis-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .axis-bar{height:8px;background:var(--card2);border-radius:6px;position:relative;overflow:hidden;}
+  .axis-fill{position:absolute;top:0;bottom:0;border-radius:6px;transition:width .8s ease;}
+
+  .divider{border:none;border-top:1px dashed var(--line);margin:30px 0;}
+  .section-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:18px;margin-bottom:6px;}
+  .section-note{color:var(--muted);font-size:13px;line-height:1.75;margin-bottom:16px;}
+
+  .tier{margin-bottom:16px;}
+  .tier-name{font-size:12.5px;font-weight:700;letter-spacing:.06em;margin-bottom:6px;}
+  .tier-1 .tier-name{color:var(--teal);}
+  .tier-2 .tier-name{color:var(--gold);}
+  .tier-3 .tier-name{color:var(--red);}
+  .tier-items{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--card2);}
+  .chip.hit{color:#fff;border-color:transparent;}
+  .tier-1 .chip.hit{background:var(--teal);}
+  .tier-2 .chip.hit{background:#8a6a15;}
+  .tier-3 .chip.hit{background:var(--red);}
+
+  .closing{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:26px;font-size:14px;line-height:1.9;color:#cfc9ba;}
+  .closing b{color:var(--ink);}
+  .retake{display:block;margin:26px auto 0;}
+  footer{text-align:center;color:#4c5464;font-size:11px;margin-top:40px;line-height:1.8;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="compass-holder">
+    <div class="compass">
+      <svg viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="57" fill="none" stroke="#2b3341" stroke-width="1.5"/>
+        <circle cx="60" cy="60" r="42" fill="none" stroke="#232a36" stroke-width="1"/>
+        <text x="60" y="13" fill="#5b6478" font-size="8.5" text-anchor="middle" font-family="Noto Sans TC">維權</text>
+        <text x="60" y="114" fill="#5b6478" font-size="8.5" text-anchor="middle" font-family="Noto Sans TC">觀望</text>
+        <text x="10" y="63" fill="#5b6478" font-size="8.5" text-anchor="middle" font-family="Noto Sans TC">理性</text>
+        <text x="110" y="63" fill="#5b6478" font-size="8.5" text-anchor="middle" font-family="Noto Sans TC">激進</text>
+        <g class="needle" id="needle">
+          <polygon points="60,18 65,60 60,70 55,60" fill="#c9a227"/>
+          <polygon points="60,102 55,60 60,54 65,60" fill="#b3503d"/>
+          <circle cx="60" cy="60" r="4.5" fill="#ece5d3"/>
+        </g>
+      </svg>
+    </div>
+    <div class="compass-label">你的風向 · 即時更新</div>
+  </div>
+
+  <header>
+    <h1>你的立場，不是<span>被帶</span>出來的</h1>
+    <p class="sub">這不是要你選邊站，而是把網路上真實存在的立場——維權派的不同分支、中立派、敖尹支持派、路人——攤開來，讓你看清楚自己實際落在哪裡。共 8 題，約 3 分鐘。</p>
+  </header>
+
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="quizArea"></div>
+  <div id="resultArea" class="result-hidden"></div>
+  <footer>純自我覺察工具，無對錯判斷，不代表任何官方或媒體立場。</footer>
+</div>
+
+<script>
+const questions = [
+  {
+    tag:"Q1 · 你的關係",
+    text:"你跟《戀與深空》這件事的關係最接近哪一個？",
+    type:"single",
+    options:[
+      {t:"目前仍在玩，也還在課金", flags:{player:1,active:1}},
+      {t:"曾經課金投入，這次已經停氪或退坑", flags:{player:1}},
+      {t:"不玩這款遊戲，但這幾天一直在關注", flags:{bystander:1}},
+      {t:"完全不熟，是被這個測驗吸引進來的", flags:{curious:1}},
+    ]
+  },
+  {
+    tag:"Q2 · 公司責任",
+    text:"關於叠紙公司本身的決策——擅改遊戲定位、不聽玩家建議、兩篇說明文的時機與內容——你覺得公司在這次事件裡扮演什麼角色？",
+    type:"single",
+    options:[
+      {t:"公司才是最大問題根源。不聽玩家、改定位、用外部爭議模糊自己的決策失誤，敖尹被攻擊是公司一手造成的", axis:{C:3,V:1,T:-2}},
+      {t:"公司有責任，但這次走到這個地步是多方因素疊加的結果，不全是公司的錯", axis:{C:1,T:0}},
+      {t:"覺得公司已經盡力回應，被罵得有點冤，部分批評是被放大了", axis:{C:-1,T:2}},
+      {t:"還沒辦法判斷，需要更多資訊", axis:{C:0,T:0}},
+    ]
+  },
+  {
+    tag:"Q3 · 官方說明文",
+    text:"官方前後發出兩篇說明文（第一篇偏模糊、第二篇才稍微正面回應），讀完的整體感受是？",
+    type:"single",
+    options:[
+      {t:"前後兩篇都是公關危機處理，沒有真正解決核心問題，只是在滅火", axis:{V:2,T:-2}},
+      {t:"第二篇稍微有誠意，但後續整改承諾還需要觀察", axis:{V:1,T:0}},
+      {t:"覺得態度算可以了，是可以接受的回應", axis:{V:-1,T:2}},
+      {t:"沒什麼特別感覺，官方公告本來就都長這樣", axis:{V:0,T:0}},
+    ]
+  },
+  {
+    tag:"Q4 · 對敖尹這個角色",
+    text:"先把爭議放一邊——對於敖尹這個角色本身的設計、人設、聲線，你的感受是？",
+    type:"single",
+    options:[
+      {t:"很喜歡，是我很期待的角色，不管外面怎麼吵，我希望他能以某種形式回來", axis:{AY:3}},
+      {t:"設計還不錯，有好感，但沒有特別著迷", axis:{AY:1}},
+      {t:"無感，不影響我對整件事的判斷", axis:{AY:0}},
+      {t:"不喜歡這個角色設計或人設", axis:{AY:-2}},
+    ]
+  },
+  {
+    tag:"Q5 · 遊戲定位爭議",
+    text:"關於叠紙把戀與深空從乙女向轉成全性向的方向（含乙女腐熱搜、全性向爭議），你的看法？",
+    type:"single",
+    options:[
+      {t:"這是核心問題之一——乙女向玩家是主要客群，不事先好好溝通就擅改定位，是對玩家的背叛", axis:{C:2,V:1}},
+      {t:"遊戲可以有不同方向，但沒有透明地跟玩家溝通才是問題", axis:{C:1,V:0}},
+      {t:"全性向是市場拓展的正常選擇，玩家的反應有點保守", axis:{C:-1,V:-1}},
+      {t:"不太清楚這個爭議的細節", axis:{F:2}},
+    ]
+  },
+  {
+    tag:"Q6 · 維權行動",
+    text:"對於這次的各種維權行動，你的態度最接近哪一種？",
+    type:"single",
+    options:[
+      {t:"支持理性維權：停氪停登、官方管道投訴、有組織的消費者施壓——這是合理的手段", axis:{V:2,I:-1}},
+      {t:"支持維權，也支持更激烈的手段。讓公司付出代價，辱罵、塞辱華帽子這類行為在我看來也合理", axis:{V:2,I:3}},
+      {t:"理解有人要維權，但看到一些人的行為已經超出合理範圍，那不是我認同的方式", axis:{V:1,I:-2}},
+      {t:"覺得整個抵制規模都有點過了", axis:{V:-2,I:-2}},
+    ]
+  },
+  {
+    tag:"Q7 · 你的判斷來源",
+    text:"你對這件事的看法，主要是怎麼形成的？",
+    type:"single",
+    options:[
+      {t:"自己查過資料、看過多方說法，有獨立判斷", axis:{F:-2}},
+      {t:"主要從社群討論、朋友或關注的人那邊了解情況，整體覺得說法合理", axis:{F:1}},
+      {t:"看到大家都在說，覺得應該有問題，就跟著一起關注", axis:{F:3}},
+      {t:"目前還沒有確定立場，在持續觀察", axis:{F:0}},
+    ]
+  },
+  {
+    tag:"Q8 · 行為自查（可複選）",
+    text:"以下這些行為，你這幾天做過、認真考慮過、或明確認同的有哪些？",
+    hint:"可以選多個，只用來畫出你的行為強度分佈，不做對錯判斷。",
+    type:"multi",
+    options:[
+      {t:"在官方客服／意見信箱留言反饋", tier:1},
+      {t:"公開發文、加入話題標籤表達立場", tier:1},
+      {t:"單純圍觀或轉發，沒有實際採取行動", tier:1},
+      {t:"停氪停登，拒絕貢獻流水或日活數據", tier:2},
+      {t:"統一開發票，增加廠商行政或稅務成本", tier:2},
+      {t:"對持不同意見的人出征或辱罵", tier:3},
+      {t:"給不同立場的人貼「辱華」「腦殘粉」等標籤", tier:3},
+      {t:"搜索或公開涉事人員的個人背景資訊", tier:3},
+    ]
+  }
+];
+
+let current = 0;
+const answers = new Array(questions.length).fill(null);
+const multiAnswers = {};
+const quizArea = document.getElementById('quizArea');
+const resultArea = document.getElementById('resultArea');
+const progressFill = document.getElementById('progressFill');
+const needle = document.getElementById('needle');
+
+function renderQuestion(i){
+  const q = questions[i];
+  progressFill.style.width = (i/questions.length*100)+'%';
+  let html = `<div class="card"><div class="qtag">${q.tag}</div><div class="qtext">${q.text}</div>`;
+  if(q.hint) html += `<div class="qhint">${q.hint}</div>`;
+  q.options.forEach((opt,oi)=>{
+    const isMulti = q.type==='multi';
+    const sel = isMulti ? (multiAnswers[i]&&multiAnswers[i].includes(oi)) : answers[i]===oi;
+    html += `<div class="opt ${isMulti?'checkbox':''} ${sel?'selected':''}" data-qi="${i}" data-oi="${oi}">
+      <div class="mark"></div><div class="otext">${opt.t}</div></div>`;
+  });
+  html += `<div class="navrow">
+    <button class="btn-ghost" id="backBtn" ${i===0?'style="visibility:hidden"':''}>← 上一題</button>
+    <button class="btn-primary" id="nextBtn">${i===questions.length-1?'看我的結果':'下一題 →'}</button>
+  </div></div>`;
+  quizArea.innerHTML = html;
+  quizArea.querySelectorAll('.opt').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const qi=+el.dataset.qi,oi=+el.dataset.oi;
+      if(questions[qi].type==='multi'){
+        if(!multiAnswers[qi]) multiAnswers[qi]=[];
+        const idx=multiAnswers[qi].indexOf(oi);
+        if(idx>-1) multiAnswers[qi].splice(idx,1); else multiAnswers[qi].push(oi);
+      } else { answers[qi]=oi; }
+      renderQuestion(current); updateNeedle();
+    });
+  });
+  document.getElementById('nextBtn').addEventListener('click',()=>{
+    if(i===questions.length-1) showResults(); else { current++; renderQuestion(current); }
+  });
+  const back=document.getElementById('backBtn');
+  if(back) back.addEventListener('click',()=>{ current--; renderQuestion(current); });
+}
+
+function updateNeedle(){
+  let v=0,i=0;
+  answers.forEach((oi,qi)=>{
+    if(oi===null) return;
+    const opt=questions[qi].options[oi];
+    if(opt.axis){ v+=opt.axis.V||0; i+=opt.axis.I||0; }
+  });
+  const angle=Math.max(-65,Math.min(65,(v*7)+(i*5)));
+  needle.style.transform=`rotate(${angle}deg)`;
+}
+
+function computeScores(){
+  let V=0,I=0,C=0,AY=0,F=0,T=0;
+  let player=0,bystander=0,curious=0;
+  answers.forEach((oi,qi)=>{
+    if(oi===null) return;
+    const opt=questions[qi].options[oi];
+    if(opt.axis){ V+=opt.axis.V||0; I+=opt.axis.I||0; C+=opt.axis.C||0; AY+=opt.axis.AY||0; F+=opt.axis.F||0; T+=opt.axis.T||0; }
+    if(opt.flags){ player+=opt.flags.player||0; bystander+=opt.flags.bystander||0; curious+=opt.flags.curious||0; }
+  });
+  const tierCounts={1:0,2:0,3:0};
+  const q8=questions[7];
+  (multiAnswers[7]||[]).forEach(oi=>{ tierCounts[q8.options[oi].tier]++; });
+  return {V,I,C,AY,F,T,player,bystander,curious,tierCounts};
+}
+
+function ayNote(AY){
+  if(AY>=3) return {label:"你對敖尹的感受：很喜歡",text:"不管你的主要立場是什麼，你對這個角色本身是有感情的。這說明你的判斷裡，有一部分是真實的角色情感，不只是跟著輿論走。"};
+  if(AY>=1) return {label:"你對敖尹的感受：有好感",text:"你對角色本身有一定的好感，但這份感受不是你判斷這件事的唯一根據——你還在看更大的圖。"};
+  if(AY===0) return {label:"你對敖尹的感受：無感",text:"角色本身不影響你的判斷，你在意的是事件背後的其他面向——公司行為、玩家權益、或其他議題。"};
+  return {label:"你對敖尹的感受：不喜歡",text:"你對這個角色沒有正向感受，你參與這件事的動機跟角色本身無關，而是針對事件的其他面向。"};
+}
+
+function personaFor(sc){
+  if(sc.curious) return {
+    badge:"路過型",
+    title:"純圍觀吃瓜者",
+    desc:"你對這件事沒有太深的情感投入，比較像是被話題吸引進來的路人。這完全沒問題——但也正因為投入淺，最容易被單一截圖或標題帶著走。建議多看幾個不同來源再形成看法，或者乾脆繼續保持觀察者的位置也好。"
+  };
+  if(sc.bystander){
+    if(sc.V>=2) return {
+      badge:"圈外聲援",
+      title:"不玩遊戲、但加入討論的圈外聲援者",
+      desc:"你不玩戀與深空，但這件事觸及的某些面向讓你選擇加入討論——可能是公司對消費者的態度、可能是你認識喜歡這款遊戲的人。需要注意的是，圈外聲援者取得的資訊往往比較片段，建議多了解玩家長期累積的脈絡（更新頻率、定位爭議等），再決定自己真正想站的位置。"
+    };
+    return {
+      badge:"圈外觀望",
+      title:"保持距離的圈外觀察者",
+      desc:"你不是玩家，對整件事也還沒有明確的立場，目前主要是觀察。這是相對健康的起始位置——不急著選邊，等看到更完整的資訊再形成看法，也比立刻被帶進情緒裡要好。"
+    };
+  }
+  // player/engaged personas
+  if(sc.V>=3 && sc.I>=2) return {
+    badge:"激進維權派",
+    title:"高強度維權 · 激進手段認同者",
+    desc:"你認為公司有重大問題，而且支持包括辱罵、塞辱華帽子等高強度手段。這是維權派裡最激烈的一群，聲量也往往最大。需要自問的是：這些手段的目標是讓公司改變行為，還是純粹的情緒宣洩？如果是前者，高強度手段有時候反而會讓輿論焦點從公司轉移到維權者的行為上，是否達到你真正想要的結果？"
+  };
+  if(sc.V>=2 && sc.F>=2) return {
+    badge:"跟風維權派",
+    title:"跟著情緒走 · 細節可能還不完整",
+    desc:"你對這件事有不滿、也認同維權，但你的立場主要是從社群氛圍或周圍的人那邊接收過來的，自己查過的細節可能還不完整。這不代表你的感受是錯的，但這種狀況最容易被帶著走——今天被帶向這邊，明天被帶向那邊，都沒有真正是自己的判斷。建議在繼續參與之前，去查查公司定位爭議、更新頻率爭議、兩篇說明文的具體內容，再決定你真正想站哪裡。"
+  };
+  if(sc.V>=3) return {
+    badge:"正常維權派",
+    title:"有具體訴求 · 理性施壓的維權派",
+    desc:"你認為公司的決策和回應有問題，也支持採取行動，但你認同的方式是理性的：停氪停登、官方管道投訴、有組織的消費者施壓。這是維權派裡最接近消費者保護概念的一群，訴求也通常最清楚。需要留意的是，在社群裡很容易被激進的聲音帶著往更高強度的方向走——清楚自己的邊界在哪，比跟著氣氛升級更重要。"
+  };
+  if(sc.AY>=3 && sc.V<2) return {
+    badge:"敖尹派",
+    title:"真正的敖尹支持者 · 希望他能回來",
+    desc:"你喜歡這個角色，這是你參與這件事最核心的動機，比起維權或批評公司，你更在意的是敖尹這個角色本身的去留。這種立場在整個輿論風向裡相對安靜、也最容易被忽略——大家在吵爭議，你在想的是一個角色。你的聲音確實存在，而且不應該被算進任何一方的聲量裡。"
+  };
+  if(sc.AY>=1 && sc.V<3) return {
+    badge:"敖尹派",
+    title:"喜歡敖尹，但理解外部爭議的存在",
+    desc:"你對這個角色有感情，但也明白外部爭議讓事情變得複雜，你沒有選擇全力推他或全力否定爭議，而是帶著某種矛盾的感受繼續關注。這個位置其實很真實——不是每件事都需要立刻表態，帶著疑問繼續觀察也是一種合理的選擇。"
+  };
+  if(sc.V<0 && sc.T>=1) return {
+    badge:"少數觀點",
+    title:"覺得反應過度 · 反出征派",
+    desc:"你傾向覺得公司已經盡力回應，也覺得這次抵制規模或手段有些過了。這種聲音在輿論一面倒的時候通常會被壓下去，但確實真實存在。需要留意的是：覺得批評過了，不等於公司就沒有問題；你可以認為手段過激，同時也認同玩家有合理的不滿，這兩個判斷不互相排斥。"
+  };
+  return {
+    badge:"中立觀望",
+    title:"還沒定論 · 持續觀察派",
+    desc:"你介於各立場之間，還沒有形成非常明確的方向——覺得爭議確實存在，但也還沒決定怎麼回應，或者需要更多資訊再做判斷。這是完全合理的狀態，不需要急著在情緒最高點時站到某一邊。晚一點形成立場，反而比較不容易是被帶出來的。"
+  };
+}
+
+function tierLabel(n){
+  if(n===1) return {name:"一般意見表達",note:"官方管道反饋、公開發文、圍觀轉發——消費者最基本的表達方式，風險低，是大多數人都在做的事。"};
+  if(n===2) return {name:"組織性消費施壓",note:"停氪停登、統一開發票——有組織的施壓手段，效果比個人行動大，也開始涉及是否合理的討論。"};
+  return {name:"高強度 / 可能涉及爭議行為",note:"對異見者出征辱罵、塞帽子標籤、人肉個資——常遊走在網路騷擾或侵犯隱私的邊界，即使動機出於義憤，行為本身也值得每個人自己把關。"};
+}
+
+function pct(v,min,max){ return Math.round(Math.max(0,Math.min(100,((v-min)/(max-min))*100))); }
+
+function showResults(){
+  const sc=computeScores();
+  const p=personaFor(sc);
+  const ay=ayNote(sc.AY);
+  const angle=Math.max(-65,Math.min(65,(sc.V*7)+(sc.I*5)));
+  needle.style.transform=`rotate(${angle}deg)`;
+
+  const vPct=pct(sc.V,-3,7);
+  const iPct=pct(sc.I,-4,4);
+  const cPct=pct(sc.C,-1,5);
+
+  let html=`
+  <div class="card">
+    <div class="persona-badge">${p.badge}</div>
+    <div class="persona-title">${p.title}</div>
+    <p class="persona-desc">${p.desc}</p>
+    <div class="ay-box">
+      <div class="ay-label">${ay.label}</div>
+      <div class="ay-text">${ay.text}</div>
+    </div>
+    <div class="axes">
+      <div class="axis">
+        <div class="axis-label"><span>維權傾向</span><span>觀望 ── 積極行動</span></div>
+        <div class="axis-bar"><div class="axis-fill" style="width:${Math.max(4,vPct)}%;background:var(--gold);"></div></div>
+      </div>
+      <div class="axis">
+        <div class="axis-label"><span>手段激進程度</span><span>理性 ── 激進</span></div>
+        <div class="axis-bar"><div class="axis-fill" style="width:${Math.max(4,iPct)}%;background:var(--red);"></div></div>
+      </div>
+      <div class="axis">
+        <div class="axis-label"><span>公司責任歸因</span><span>低 ── 高</span></div>
+        <div class="axis-bar"><div class="axis-fill" style="width:${Math.max(4,cPct)}%;background:var(--teal);"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="card">
+    <div class="section-title">你的行為強度分佈</div>
+    <div class="section-note">根據 Q8 你勾選的項目分級。不論落在哪一級都不代表對錯，純粹是讓你看清楚自己認同的行動，實際落在什麼強度。</div>
+    ${[1,2,3].map(n=>{
+      const info=tierLabel(n);
+      const count=sc.tierCounts[n];
+      return `<div class="tier tier-${n}">
+        <div class="tier-name">${info.name}${count>0?' · 你勾選了 '+count+' 項':' · 未勾選'}</div>
+        <div class="section-note">${info.note}</div>
+      </div>`;
+    }).join('')}
+  </div>
+
+  <div class="closing">
+    <b>給所有立場的一句話：</b>這次事件裡，「正常維權」「激進維權」「跟風」「觀望」「敖尹支持」「圈外路人」是好幾群動機完全不同的人，但在網路上全部被算成同一堆聲音。你的立場只有你自己清楚——比起站在哪邊，更重要的是你知道自己為什麼站在那裡。
+  </div>
+
+  <button class="btn-primary retake" id="retakeBtn">重新測一次</button>`;
+
+  quizArea.classList.add('result-hidden');
+  resultArea.innerHTML=html;
+  resultArea.classList.remove('result-hidden');
+  progressFill.style.width='100%';
+
+  document.getElementById('retakeBtn').addEventListener('click',()=>{
+    current=0; answers.fill(null);
+    Object.keys(multiAnswers).forEach(k=>delete multiAnswers[k]);
+    resultArea.classList.add('result-hidden');
+    quizArea.classList.remove('result-hidden');
+    needle.style.transform='rotate(0deg)';
+    renderQuestion(0);
+  });
+}
+
+renderQuestion(0);
+</script>
+</body>
+</html>
